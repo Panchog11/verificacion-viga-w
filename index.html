@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificación Viga W</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#1b1f24; --muted:#5d6670; --line:#dde1e6;
+  --accent:#1f5fae; --ok:#1d7a3e; --okbg:#e6f4ea; --bad:#b3261e; --badbg:#fbe9e7; --fill:#1f5fae22;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --card:#1b1e22; --ink:#e7e9ec; --muted:#9aa3ad; --line:#2d3238;
+    --accent:#6ea8ff; --ok:#6fcf8d; --okbg:#173322; --bad:#ff8a80; --badbg:#3a1c1a; --fill:#6ea8ff22;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --card:#1b1e22; --ink:#e7e9ec; --muted:#9aa3ad; --line:#2d3238;
+  --accent:#6ea8ff; --ok:#6fcf8d; --okbg:#173322; --bad:#ff8a80; --badbg:#3a1c1a; --fill:#6ea8ff22;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h2{font-size:1rem;margin:0 0 12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:.9rem;color:var(--ink)}
+.chk input{width:auto}
+button{margin-top:14px;width:100%;padding:9px;border:0;border-radius:6px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.v{border-radius:8px;padding:10px 12px}
+.v.ok{background:var(--okbg);color:var(--ok)} .v.bad{background:var(--badbg);color:var(--bad)}
+.v b{display:block;font-size:1.35rem} .v span{font-size:.8rem}
+.tag{font-weight:700} .tag.ok{color:var(--ok)} .tag.bad{color:var(--bad)}
+.sec{margin-top:18px}
+.sec h3{font-size:.95rem;margin:0 0 6px}
+.note{font-size:.8rem;color:var(--muted);margin-top:8px}
+svg{width:100%;height:auto;display:block}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>Verificación de viga W</h1>
+<p class="sub">Flexión, corte y flecha según CIRSOC 301-2005 / AISC 360 (LRFD). Resistencia con 1,2D+1,6L; servicio con 1,0D+1,0L.</p>
+
+<div class="grid">
+<section class="card">
+  <h2>Datos</h2>
+  <label for="perfil">Perfil W</label>
+  <select id="perfil"></select>
+  <label for="acero">Acero</label>
+  <select id="acero">
+    <option value="345">ASTM A572 Gr50 / A992 — Fy = 345 MPa</option>
+    <option value="250">ASTM A36 — Fy = 250 MPa</option>
+    <option value="235">F-24 — Fy = 235 MPa</option>
+  </select>
+  <label for="vinc">Vinculación</label>
+  <select id="vinc">
+    <option value="art">Articulado – articulado</option>
+    <option value="emp">Empotrado – empotrado</option>
+    <option value="ea">Empotrado – articulado</option>
+    <option value="vol">Voladizo (empotrado – libre)</option>
+  </select>
+  <div class="row2">
+    <div><label for="L">Luz L [m]</label><input id="L" type="number" step="0.1" value="6"></div>
+    <div><label for="b">Ancho de influencia [m]</label><input id="b" type="number" step="0.1" value="2"></div>
+  </div>
+  <div class="row2">
+    <div><label for="D">Carga D [kN/m²]</label><input id="D" type="number" step="0.1" value="2"></div>
+    <div><label for="Lv">Carga L [kN/m²]</label><input id="Lv" type="number" step="0.1" value="2.5"></div>
+  </div>
+  <div class="row2">
+    <div><label for="Lb">Long. no arriostrada Lb [m]</label><input id="Lb" type="number" step="0.1" value="6"></div>
+    <div><label for="fl">Flecha admisible L / </label><input id="fl" type="number" step="10" value="200"></div>
+  </div>
+  <label class="chk"><input id="pp" type="checkbox" checked> Incluir peso propio del perfil en D</label>
+  <button id="calc">Calcular</button>
+  <button id="best" style="background:var(--ok)">Buscar perfil más liviano que verifica</button>
+  <p class="note">Lb = 0 → ala comprimida arriostrada en forma continua. Si Lb &lt; L se asumen arriostramientos equiespaciados a una separación ≤ Lb.</p>
+</section>
+
+<section class="card" id="out"></section>
+</div>
+</main>
+
+<script>
+// [imperial, métrico, lb/ft, A in², d, tw, bf, tf, Ix in⁴, Sx in³, Zx in³, Iy in⁴, ry in, J in⁴, Cw in⁶]  (AISC Shapes Database)
+const DB=[
+["W6x9","W150x13.5",9,2.68,5.90,.170,3.94,.215,16.4,5.56,6.23,2.20,.905,.0405,17.7],
+["W6x12","W150x18",12,3.55,6.03,.230,4.00,.280,22.1,7.31,8.30,2.99,.918,.0903,24.7],
+["W6x15","W150x22.5",15,4.43,5.99,.230,5.99,.260,29.1,9.72,10.8,9.32,1.45,.101,76.5],
+["W8x10","W200x15",10,2.96,7.89,.170,3.94,.205,30.8,7.81,8.87,2.09,.841,.0426,30.9],
+["W8x13","W200x19.3",13,3.84,7.99,.230,4.00,.255,39.6,9.91,11.4,2.73,.843,.0870,40.8],
+["W8x18","W200x26.6",18,5.26,8.14,.230,5.25,.330,61.9,15.2,17.0,7.97,1.23,.172,122],
+["W8x21","W200x31.3",21,6.16,8.28,.250,5.27,.400,75.3,18.2,20.4,9.77,1.26,.282,152],
+["W8x24","W200x35.9",24,7.08,7.93,.245,6.50,.400,82.7,20.9,23.1,18.3,1.61,.346,259],
+["W8x31","W200x46.1",31,9.13,8.00,.285,8.00,.435,110,27.5,30.4,37.1,2.02,.536,530],
+["W10x12","W250x17.9",12,3.54,9.87,.190,3.96,.210,53.8,10.9,12.6,2.18,.785,.0547,50.9],
+["W10x15","W250x22.3",15,4.41,9.99,.230,4.00,.270,68.9,13.8,16.0,2.89,.810,.104,68.3],
+["W10x19","W250x28.4",19,5.62,10.2,.250,4.02,.395,96.3,18.8,21.6,4.29,.874,.233,104],
+["W10x22","W250x32.7",22,6.49,10.2,.240,5.75,.360,118,23.2,26.0,11.4,1.33,.239,275],
+["W10x26","W250x38.5",26,7.61,10.3,.260,5.77,.440,144,27.9,31.3,14.1,1.36,.402,345],
+["W10x30","W250x44.8",30,8.84,10.5,.300,5.81,.510,170,32.4,36.6,16.7,1.37,.622,414],
+["W10x33","W250x49.1",33,9.71,9.73,.290,7.96,.435,171,35.0,38.8,36.6,1.94,.583,791],
+["W12x14","W310x21",14,4.16,11.9,.200,3.97,.225,88.6,14.9,17.4,2.36,.753,.0704,80.4],
+["W12x16","W310x23.8",16,4.71,12.0,.220,3.99,.265,103,17.1,20.1,2.82,.773,.103,96.9],
+["W12x19","W310x28.3",19,5.57,12.2,.235,4.01,.350,130,21.3,24.7,3.76,.822,.180,131],
+["W12x22","W310x32.7",22,6.48,12.3,.260,4.03,.425,156,25.4,29.3,4.66,.848,.293,164],
+["W12x26","W310x38.7",26,7.65,12.2,.230,6.49,.380,204,33.4,37.2,17.3,1.51,.300,607],
+["W12x30","W310x44.5",30,8.79,12.3,.260,6.52,.440,238,38.6,43.1,20.3,1.52,.457,720],
+["W12x35","W310x52",35,10.3,12.5,.300,6.56,.520,285,45.6,51.2,24.5,1.54,.741,879],
+["W14x22","W360x32.9",22,6.49,13.7,.230,5.00,.335,199,29.0,33.2,7.00,1.04,.208,314],
+["W14x26","W360x39",26,7.69,13.9,.255,5.03,.420,245,35.3,40.2,8.91,1.08,.358,405],
+["W14x30","W360x44",30,8.85,13.8,.270,6.73,.385,291,42.0,47.3,19.6,1.49,.380,887],
+["W14x34","W360x51",34,10.0,14.0,.285,6.75,.455,340,48.6,54.6,23.3,1.53,.569,1070],
+["W16x26","W410x38.8",26,7.68,15.7,.250,5.50,.345,301,38.4,44.2,9.59,1.12,.262,565],
+["W16x31","W410x46.1",31,9.13,15.9,.275,5.53,.440,375,47.2,54.0,12.4,1.17,.461,739],
+["W16x36","W410x53",36,10.6,15.9,.295,6.99,.430,448,56.5,64.0,24.5,1.52,.545,1460],
+["W16x40","W410x60",40,11.8,16.0,.305,7.00,.505,518,64.7,73.0,28.9,1.57,.794,1730],
+["W18x35","W460x52",35,10.3,17.7,.300,6.00,.425,510,57.6,66.5,15.3,1.22,.506,1140],
+["W18x40","W460x60",40,11.8,17.9,.315,6.02,.525,612,68.4,78.4,19.1,1.27,.810,1440],
+["W18x46","W460x68",46,13.5,18.1,.360,6.06,.605,712,78.8,90.7,22.5,1.29,1.22,1720],
+["W18x50","W460x74",50,14.7,18.0,.355,7.50,.570,800,88.9,101,40.1,1.65,1.24,3040],
+["W21x44","W530x66",44,13.0,20.7,.350,6.50,.450,843,81.6,95.4,20.7,1.26,.770,2110],
+["W21x50","W530x74",50,14.7,20.8,.380,6.53,.535,984,94.5,110,24.9,1.30,1.14,2570],
+["W24x55","W610x82",55,16.2,23.6,.395,7.01,.505,1350,114,134,29.1,1.34,1.18,3870],
+["W24x62","W610x92",62,18.2,23.7,.430,7.04,.590,1550,131,153,34.5,1.38,1.71,4620]
+];
+const IN=25.4, IN2=645.16, IN3=16387.064, IN4=416231.4, IN6=268535866;
+const P=DB.map(r=>({imp:r[0],met:r[1],kgm:r[2]*1.48816,A:r[3]*IN2,d:r[4]*IN,tw:r[5]*IN,bf:r[6]*IN,tf:r[7]*IN,
+  Ix:r[8]*IN4,Sx:r[9]*IN3,Zx:r[10]*IN3,Iy:r[11]*IN4,ry:r[12]*IN,J:r[13]*IN4,Cw:r[14]*IN6}));
+const E=200000; // MPa
+
+const $=id=>document.getElementById(id);
+P.forEach((p,i)=>$("perfil").add(new Option(`${p.met}  (${p.imp})  —  ${p.kgm.toFixed(1)} kg/m`,i)));
+$("perfil").value=P.findIndex(p=>p.imp==="W8x24");
+
+// Carga uniforme q [N/mm], x [mm] desde el apoyo izquierdo (empotramiento si lo hay), luz L [mm].
+// M: momento (+ tracciona abajo). y: flecha·EI/q (+ hacia abajo). V: reacción máxima / q.
+const CASES={
+  art:{name:"articulado–articulado",sup:["pin","roller"],
+    M:(x,q,L)=>q*x*(L-x)/2, y:(x,L)=>x*(L**3-2*L*x*x+x**3)/24, V:L=>L/2,
+    Mtxt:{pos:"Mu⁺ = qu·L²/8 (centro)"}, Vtxt:"Vu = qu·L/2", dtxt:"5·qs·L⁴/(384·E·Ix) (centro)"},
+  emp:{name:"empotrado–empotrado",sup:["fix","fix"],
+    M:(x,q,L)=>q*x*(L-x)/2-q*L*L/12, y:(x,L)=>x*x*(L-x)**2/24, V:L=>L/2,
+    Mtxt:{neg:"Mu⁻ = qu·L²/12 (apoyos)",pos:"Mu⁺ = qu·L²/24 (centro)"}, Vtxt:"Vu = qu·L/2", dtxt:"qs·L⁴/(384·E·Ix) (centro)"},
+  ea:{name:"empotrado–articulado",sup:["fix","roller"],
+    M:(x,q,L)=>5*q*L*x/8-q*x*x/2-q*L*L/8, y:(x,L)=>x*x*(3*L*L-5*L*x+2*x*x)/48, V:L=>5*L/8,
+    Mtxt:{neg:"Mu⁻ = qu·L²/8 (empotramiento)",pos:"Mu⁺ = 9·qu·L²/128 (x = 5L/8)"}, Vtxt:"Vu = 5·qu·L/8 (empotramiento)", dtxt:"qs·L⁴/(185·E·Ix) (x = 0,579L del empotramiento)"},
+  vol:{name:"voladizo (empotrado–libre)",sup:["fix","free"],
+    M:(x,q,L)=>-q*(L-x)**2/2, y:(x,L)=>x*x*(6*L*L-4*L*x+x*x)/24, V:L=>L,
+    Mtxt:{neg:"Mu⁻ = qu·L²/2 (empotramiento)"}, Vtxt:"Vu = qu·L (empotramiento)", dtxt:"qs·L⁴/(8·E·Ix) (extremo libre)"}
+};
+const M=(x,q,L,v)=>CASES[v].M(x,q,L);
+const NS=400; // puntos de muestreo a lo largo de la viga
+
+function calc(p,i){
+  const Fy=i.Fy, L=i.L*1000, sq=Math.sqrt(E/Fy);
+  const pp=i.pp?p.kgm*9.81/1000:0;            // kN/m
+  const qD=i.D*i.b+pp, qL=i.Lv*i.b;            // kN/m = N/mm
+  const qu=Math.max(1.2*qD+1.6*qL,1.4*qD), qs=qD+qL;
+  const combo=(1.4*qD>1.2*qD+1.6*qL)?"1,4D":"1,2D+1,6L";
+  // Solicitaciones
+  const C=CASES[i.v];
+  let Mpos=0,Mneg=0;
+  for(let j=0;j<=NS;j++){const m=C.M(L*j/NS,qu,L);Mpos=Math.max(Mpos,m);Mneg=Math.max(Mneg,-m);}
+  const Mu=Math.max(Mpos,Mneg), Vu=qu*C.V(L);
+  // --- Flexión ---
+  const Mp=Fy*p.Zx, My=0.7*Fy*p.Sx;
+  const h=p.d-2*p.tf, htw=h/p.tw;
+  const lf=p.bf/(2*p.tf), lpf=0.38*sq, lrf=1.0*sq;
+  let Mflb, clase;
+  if(lf<=lpf){Mflb=Mp;clase="compacta";}
+  else if(lf<=lrf){Mflb=Mp-(Mp-My)*(lf-lpf)/(lrf-lpf);clase="no compacta";}
+  else{const kc=Math.min(.76,Math.max(.35,4/Math.sqrt(htw)));Mflb=0.9*E*kc*p.Sx/(lf*lf);clase="esbelta";}
+  const ho=p.d-p.tf, rts=Math.sqrt(Math.sqrt(p.Iy*p.Cw)/p.Sx), jc=p.J/(p.Sx*ho);
+  const Lp=1.76*p.ry*sq;
+  const Lr=1.95*rts*E/(0.7*Fy)*Math.sqrt(jc+Math.sqrt(jc*jc+6.76*Math.pow(0.7*Fy/E,2)));
+  function MnLTB(Lb,Cb){
+    if(Lb<=Lp) return {Mn:Mp,zona:"Lb ≤ Lp (plástico)"};
+    if(Lb<=Lr) return {Mn:Math.min(Mp,Cb*(Mp-(Mp-My)*(Lb-Lp)/(Lr-Lp))),zona:"Lp < Lb ≤ Lr (inelástico)"};
+    const s=Lb/rts, Fcr=Cb*Math.PI*Math.PI*E/(s*s)*Math.sqrt(1+0.078*jc*s*s);
+    return {Mn:Math.min(Mp,Fcr*p.Sx),zona:"Lb > Lr (elástico)"};
+  }
+  let ltb;
+  if(i.Lb<=0){ ltb={Mn:Mp,zona:"arriostrado continuo",Cb:1,s:0,Mseg:Mu}; }
+  else{
+    const n=Math.max(1,Math.ceil(L/(i.Lb*1000)-1e-9)), s=L/n;
+    ltb=null;
+    for(let k=0;k<n;k++){
+      const a=k*s, f=x=>Math.abs(M(x,qu,L,i.v));
+      let Mm=0; for(let j=0;j<=100;j++) Mm=Math.max(Mm,f(a+s*j/100));
+      const MA=f(a+s/4),MB=f(a+s/2),MC=f(a+3*s/4);
+      // Voladizo con extremo libre sin arriostrar: Cb = 1,0
+      const Cb=i.v==="vol"?1:Math.min(3,12.5*Mm/(2.5*Mm+3*MA+4*MB+3*MC));
+      const r=MnLTB(s,Cb), ratio=Mm/(0.9*Math.min(r.Mn,Mflb));
+      if(!ltb||ratio>ltb.ratio) ltb={...r,Cb,s,Mseg:Mm,ratio,n};
+    }
+  }
+  const Mn=Math.min(ltb.Mn,Mflb), phiMn=0.9*Mn;
+  const rM=ltb.Mseg/phiMn;
+  // --- Corte ---
+  const Aw=p.d*p.tw, kv=5.34; let phiv,Cv;
+  if(htw<=2.24*sq){phiv=1.0;Cv=1;}
+  else{phiv=0.9;const a=1.10*Math.sqrt(kv*E/Fy);Cv=htw<=a?1:htw<=1.37*Math.sqrt(kv*E/Fy)?a/htw:1.51*kv*E/(htw*htw*Fy);}
+  const Vn=0.6*Fy*Aw*Cv, phiVn=phiv*Vn, rV=Vu/phiVn;
+  // --- Flecha ---
+  let ymax=0,xdef=0;
+  for(let j=0;j<=NS;j++){const x=L*j/NS,y=C.y(x,L);if(y>ymax){ymax=y;xdef=x;}}
+  const def=ymax*qs/(E*p.Ix), adm=L/i.fl, rD=def/adm;
+  const IxReq=def*p.Ix/adm;
+  return {p,i,C,Fy,L,pp,qD,qL,qu,qs,combo,xdef,Mpos,Mneg,Mu,Vu,Mp,My,h,htw,lf,lpf,lrf,clase,Mflb,rts,jc,Lp,Lr,ltb,Mn,phiMn,rM,
+    Aw,phiv,Cv,Vn,phiVn,rV,def,adm,rD,IxReq,ok:rM<=1&&rV<=1&&rD<=1,rmax:Math.max(rM,rV,rD)};
+}
+
+function inputs(){return{Fy:+$("acero").value,v:$("vinc").value,L:+$("L").value,b:+$("b").value,D:+$("D").value,Lv:+$("Lv").value,
+  Lb:+$("Lb").value,fl:+$("fl").value,pp:$("pp").checked};}
+
+const f=(x,d=2)=>x.toLocaleString("es-AR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const kNm=x=>f(x/1e6), kN=x=>f(x/1e3);
+const tag=r=>`<span class="tag ${r<=1?"ok":"bad"}">${r<=1?"VERIFICA":"NO VERIFICA"}</span>`;
+const vbox=(t,r)=>`<div class="v ${r<=1?"ok":"bad"}"><span>${t}</span><b>${f(r*100,0)} %</b><span>${r<=1?"Verifica":"No verifica"}</span></div>`;
+
+// Símbolos de apoyo en los extremos de la viga (eje en y)
+function supports(v,x0,x1,y){
+  const st='stroke="var(--ink)"';
+  const g=(t,x,dir)=>{
+    if(t==="pin"||t==="roller")
+      return `<polygon points="${x},${y} ${x-8},${y+13} ${x+8},${y+13}" fill="var(--card)" ${st} stroke-width="1.5"/>`+
+        (t==="roller"?`<line x1="${x-10}" y1="${y+17}" x2="${x+10}" y2="${y+17}" ${st} stroke-width="1.5"/>`:"");
+    if(t==="fix"){
+      let s=`<line x1="${x}" y1="${y-16}" x2="${x}" y2="${y+16}" ${st} stroke-width="2.5"/>`;
+      for(let k=-16;k<16;k+=6) s+=`<line x1="${x}" y1="${y+k}" x2="${x-dir*6}" y2="${y+k+6}" ${st} stroke-width="1"/>`;
+      return s;
+    }
+    return "";
+  };
+  const s=CASES[v].sup;
+  return g(s[0],x0,1)+g(s[1],x1,-1);
+}
+
+// Gráfico genérico: vals = [[x, valor]] con valores positivos dibujados hacia abajo.
+// marks = [[x, valor, texto]]; ref = {val, text} línea de referencia punteada.
+function plot({vals,L,v,title,marks,ref,stroke="var(--accent)",fill="var(--fill)"}){
+  const W=600,H=210,pad=36,top=46,bot=H-30;
+  let mn=Math.min(0,...vals.map(a=>a[1])), mx=Math.max(0,...vals.map(a=>a[1]));
+  if(ref) mx=Math.max(mx,ref.val);
+  const sc=(bot-top)/((mx-mn)||1), y0=top-mn*sc;
+  const X=x=>pad+(W-2*pad)*x/L, Y=m=>y0+m*sc;
+  const poly=vals.map(([x,m])=>`${X(x).toFixed(1)},${Y(m).toFixed(1)}`).join(" ");
+  const anchor=x=>x<0.12*L?"start":x>0.88*L?"end":"middle";
+  const lbl=marks.map(([x,m,t])=>`<circle cx="${X(x)}" cy="${Y(m)}" r="3" fill="${stroke}"/>
+    <text x="${X(x)}" y="${m>=0?Y(m)+17:Y(m)-8}" text-anchor="${anchor(x)}" font-size="12" font-weight="600" fill="currentColor">${t}</text>`).join("");
+  const refl=ref?`<line x1="${X(0)}" y1="${Y(ref.val)}" x2="${X(L)}" y2="${Y(ref.val)}" stroke="var(--bad)" stroke-width="1.2" stroke-dasharray="6 4"/>
+    <text x="${X(L)}" y="${Y(ref.val)-5}" text-anchor="end" font-size="11" fill="var(--bad)">${ref.text}</text>`:"";
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}" style="color:var(--ink)">
+    <text x="${pad}" y="16" font-size="12" fill="var(--muted)">${title}</text>
+    <polygon points="${X(0)},${y0} ${poly} ${X(L)},${y0}" fill="${fill}" stroke="none"/>
+    <polyline points="${poly}" fill="none" stroke="${stroke}" stroke-width="2"/>
+    <line x1="${X(0)}" y1="${y0}" x2="${X(L)}" y2="${y0}" stroke="var(--muted)" stroke-width="1.5"/>
+    ${refl}${supports(v,X(0),X(L),y0)}${lbl}</svg>`;
+}
+
+function diagram(R){
+  const L=R.L,v=R.i.v,C=R.C,q=R.qu,vals=[];
+  for(let j=0;j<=NS;j++){const x=L*j/NS;vals.push([x,C.M(x,q,L)]);}
+  const tol=1e-3*R.Mu, marks=[];
+  for(const x of [0,L]){const m=C.M(x,q,L); if(Math.abs(m)>tol) marks.push([x,m,`${m<0?"−":""}${kNm(Math.abs(m))} kN·m`]);}
+  let xp=0,mp=0; vals.forEach(([x,m])=>{if(m>mp){mp=m;xp=x;}});
+  if(mp>tol) marks.push([xp,mp,`${kNm(mp)} kN·m`]);
+  return plot({vals,L,v,marks,title:`Momento último Mu(x) — qu = ${f(R.qu)} kN/m (${R.combo})`});
+}
+
+function deflDiagram(R){
+  const L=R.L,v=R.i.v,C=R.C,k=R.qs/(E*R.p.Ix),vals=[];
+  for(let j=0;j<=NS;j++){const x=L*j/NS;vals.push([x,C.y(x,L)*k]);}
+  const col=R.rD<=1?"var(--ok)":"var(--bad)";
+  return plot({vals,L,v,stroke:col,fill:R.rD<=1?"var(--okbg)":"var(--badbg)",
+    marks:[[R.xdef,R.def,`δmax = ${f(R.def,1)} mm (x = ${f(R.xdef/1000)} m)`]],
+    ref:{val:R.adm,text:`δadm = L/${R.i.fl} = ${f(R.adm,1)} mm`},
+    title:`Deformada en servicio δ(x) — qs = ${f(R.qs)} kN/m (D+L)`});
+}
+
+function render(R){
+  const p=R.p,i=R.i,t=R.ltb;
+  $("out").innerHTML=`
+  <h2>${p.met} (${p.imp}) — ${R.C.name} — ${tag(R.rmax)}</h2>
+  <div class="verdict">${vbox("Flexión Mu/φMn",R.rM)}${vbox("Corte Vu/φVn",R.rV)}${vbox("Flecha δ/δadm",R.rD)}</div>
+  ${diagram(R)}
+  ${deflDiagram(R)}
+  <div class="sec scroll"><h3>1. Cargas</h3><table>
+   <tr><td>Peso propio perfil</td><td class="n">${f(R.pp,3)} kN/m</td></tr>
+   <tr><td>qD = D·b + pp = ${f(i.D)}·${f(i.b)} + ${f(R.pp,3)}</td><td class="n">${f(R.qD,3)} kN/m</td></tr>
+   <tr><td>qL = L·b = ${f(i.Lv)}·${f(i.b)}</td><td class="n">${f(R.qL,3)} kN/m</td></tr>
+   <tr><td>qu = 1,2·qD + 1,6·qL ${R.combo==="1,4D"?"(gobierna 1,4D)":""}</td><td class="n"><b>${f(R.qu,3)} kN/m</b></td></tr>
+   <tr><td>qs = 1,0·qD + 1,0·qL (servicio)</td><td class="n"><b>${f(R.qs,3)} kN/m</b></td></tr></table></div>
+
+  <div class="sec scroll"><h3>2. Solicitaciones últimas</h3><table>
+   ${R.C.Mtxt.neg?`<tr><td>${R.C.Mtxt.neg}</td><td class="n">${R.Mneg>=R.Mpos?`<b>${kNm(R.Mneg)} kN·m</b>`:`${kNm(R.Mneg)} kN·m`}</td></tr>`:""}
+   ${R.C.Mtxt.pos?`<tr><td>${R.C.Mtxt.pos}</td><td class="n">${R.Mpos>R.Mneg?`<b>${kNm(R.Mpos)} kN·m</b>`:`${kNm(R.Mpos)} kN·m`}</td></tr>`:""}
+   <tr><td>${R.C.Vtxt}</td><td class="n"><b>${kN(R.Vu)} kN</b></td></tr></table></div>
+
+  <div class="sec scroll"><h3>3. Flexión</h3><table>
+   <tr><td>Zx / Sx</td><td class="n">${f(p.Zx/1e3,1)} / ${f(p.Sx/1e3,1)} cm³</td></tr>
+   <tr><td>Mp = Fy·Zx</td><td class="n">${kNm(R.Mp)} kN·m</td></tr>
+   <tr><td>Pandeo local ala: λ = bf/2tf = ${f(R.lf)} (λp = ${f(R.lpf)}, λr = ${f(R.lrf)}) → ${R.clase}</td><td class="n">Mn = ${kNm(R.Mflb)} kN·m</td></tr>
+   <tr><td>Lp = 1,76·ry·√(E/Fy) &nbsp;/&nbsp; Lr</td><td class="n">${f(R.Lp/1000)} / ${f(R.Lr/1000)} m</td></tr>
+   <tr><td>Pandeo lateral-torsional: Lb tramo = ${t.s?f(t.s/1000)+" m":"—"}, Cb = ${f(t.Cb)} → ${t.zona}</td><td class="n">Mn = ${kNm(t.Mn)} kN·m</td></tr>
+   <tr><td>φMn = 0,9·min(Mn)</td><td class="n"><b>${kNm(R.phiMn)} kN·m</b></td></tr>
+   <tr><td>Mu (tramo crítico) / φMn</td><td class="n">${kNm(t.Mseg)} / ${kNm(R.phiMn)} = <b>${f(R.rM,3)}</b> ${tag(R.rM)}</td></tr></table></div>
+
+  <div class="sec scroll"><h3>4. Corte</h3><table>
+   <tr><td>h/tw = ${f(R.htw,1)} (límite 2,24√(E/Fy) = ${f(2.24*Math.sqrt(E/R.Fy),1)}) → φv = ${f(R.phiv,1)}, Cv = ${f(R.Cv,2)}</td><td class="n"></td></tr>
+   <tr><td>Aw = d·tw</td><td class="n">${f(R.Aw/100)} cm²</td></tr>
+   <tr><td>φVn = φv·0,6·Fy·Aw·Cv</td><td class="n"><b>${kN(R.phiVn)} kN</b></td></tr>
+   <tr><td>Vu / φVn</td><td class="n">${kN(R.Vu)} / ${kN(R.phiVn)} = <b>${f(R.rV,3)}</b> ${tag(R.rV)}</td></tr></table></div>
+
+  <div class="sec scroll"><h3>5. Flecha (servicio D+L)</h3><table>
+   <tr><td>Ix</td><td class="n">${f(p.Ix/1e4,0)} cm⁴</td></tr>
+   <tr><td>δ = ${R.C.dtxt}</td><td class="n"><b>${f(R.def,1)} mm</b></td></tr>
+   <tr><td>δadm = L/${i.fl}</td><td class="n">${f(R.adm,1)} mm</td></tr>
+   <tr><td>δ / δadm</td><td class="n"><b>${f(R.rD,3)}</b> ${tag(R.rD)}</td></tr>
+   <tr><td>Ix necesario para cumplir flecha</td><td class="n">${f(R.IxReq/1e4,0)} cm⁴</td></tr></table></div>
+  <p class="note">E = 200 000 MPa, Fy = ${R.Fy} MPa. Propiedades de perfiles: AISC Shapes Database (convertidas a SI). h ≈ d − 2tf (conservador).
+  Cb calculado por tramo con la fórmula de CIRSOC 301 F.1-1 (Cb ≤ 3). Cerca de los empotramientos el ala inferior queda comprimida: el Cb del tramo lo contempla. En voladizo se toma Cb = 1,0 y L es la longitud del voladizo
+  (para la flecha admisible de voladizos suele usarse 2L/x; ajustá el divisor si corresponde).</p>`;
+}
+
+function run(){ render(calc(P[+$("perfil").value],inputs())); }
+$("calc").onclick=run;
+$("best").onclick=()=>{
+  const i=inputs(), ok=P.map(p=>calc(p,i)).filter(r=>r.ok).sort((a,b)=>a.p.kgm-b.p.kgm);
+  if(!ok.length){ alert("Ningún perfil de la base verifica."); return; }
+  $("perfil").value=P.indexOf(ok[0].p); run();
+};
+document.querySelectorAll("input,select").forEach(e=>e.addEventListener("change",run));
+run();
+</script>
+</body>
+</html>
